@@ -1,0 +1,127 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Base styles */
+* {
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background-color: #0a0a0b;
+  color: #e8e8ea;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #131316;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #2a2a30;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #3a3a42;
+}
+
+/* Utility classes */
+@layer components {
+  .capsule-btn {
+    @apply relative flex flex-col items-center justify-center gap-1.5 p-3 rounded-lg
+           bg-irc-surface border border-irc-border
+           text-irc-text-muted text-xs font-medium font-mono uppercase tracking-wider
+           transition-all duration-200 ease-out
+           hover:bg-irc-surface-alt hover:border-irc-border-active hover:text-irc-text
+           focus:outline-none focus:ring-2 focus:ring-irc-accent/30;
+  }
+
+  .capsule-btn.active {
+    @apply bg-irc-accent/10 border-irc-accent text-irc-accent;
+  }
+
+  .capsule-btn.active::before {
+    content: '';
+    @apply absolute inset-0 rounded-lg opacity-20;
+    background: radial-gradient(circle at center, rgba(0, 200, 150, 0.3) 0%, transparent 70%);
+  }
+
+  .status-dot {
+    @apply w-2 h-2 rounded-full;
+  }
+
+  .status-dot.connected {
+    @apply bg-irc-accent;
+    box-shadow: 0 0 8px rgba(0, 200, 150, 0.6);
+  }
+
+  .status-dot.disconnected {
+    @apply bg-irc-text-muted;
+  }
+
+  .status-dot.error {
+    @apply bg-irc-danger;
+  }
+
+  .monitor-frame {
+    @apply relative rounded-lg overflow-hidden;
+    background: linear-gradient(135deg, #131316 0%, #0a0a0b 100%);
+    box-shadow: 
+      inset 0 1px 0 rgba(255, 255, 255, 0.02),
+      0 0 0 1px rgba(42, 42, 48, 0.8),
+      0 20px 40px rgba(0, 0, 0, 0.4);
+  }
+
+  .monitor-frame::before {
+    content: '';
+    @apply absolute inset-0 pointer-events-none;
+    background: 
+      linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.01) 50%, transparent 100%);
+  }
+
+  .scanline {
+    @apply absolute inset-0 pointer-events-none opacity-[0.02];
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0, 0, 0, 0.3) 2px,
+      rgba(0, 0, 0, 0.3) 4px
+    );
+  }
+}
+
+/* Prevent overscroll on mobile */
+html {
+  overscroll-behavior: none;
+}
+
+/* Video element fixes */
+video {
+  object-fit: cover;
+}
+
+/* Animation for FPS counter */
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0.3; }
+}
+
+.fps-blink {
+  animation: blink 1s ease-in-out infinite;
+}
