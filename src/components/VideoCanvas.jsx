@@ -35,7 +35,7 @@ export const VideoCanvas = forwardRef(function VideoCanvas(
   }, [processedFrame]);
 
   return (
-    <div className="monitor-frame flex-1 relative">
+    <div className="monitor-frame flex-1 max-h-[50vh] md:max-h-none relative">
       {/* Scanline overlay for industrial look */}
       <div className="scanline" />
       
