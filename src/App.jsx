@@ -8,44 +8,52 @@ import { ControlBar } from './components/ControlBar';
 import { useWebSocket } from './hooks/useWebSocket';
 import { useCamera } from './hooks/useCamera';
 
-// Frame capture interval (ms) — ~15 FPS to backend
-const CAPTURE_INTERVAL = 66;
-
 function App() {
   const [processedFrame, setProcessedFrame] = useState(null);
-  const captureIntervalRef = useRef(null);
+  
+  // Rate limiting: une seule frame en vol à la fois
+  const isCapturingRef = useRef(false);
+  const waitingForResponseRef = useRef(false);
 
   // Hooks
   const camera = useCamera();
   const ws = useWebSocket();
 
+  // Envoie la prochaine frame si on n'attend pas de réponse
+  const sendNextFrame = useCallback(() => {
+    if (!isCapturingRef.current) return;
+    if (waitingForResponseRef.current) return;
+    if (!camera.isActive || ws.status !== 'connected' || !ws.currentMode) return;
+    
+    const frame = camera.captureFrame(0.7); // 70% quality JPEG
+    if (frame) {
+      waitingForResponseRef.current = true;
+      ws.sendFrame(frame);
+    }
+  }, [camera, ws]);
+
   // Handle incoming processed frames
   useEffect(() => {
     ws.onFrame((frame) => {
       setProcessedFrame(frame);
+      waitingForResponseRef.current = false;
+      
+      // Envoie la frame suivante au prochain tick
+      requestAnimationFrame(sendNextFrame);
     });
-  }, [ws]);
+  }, [ws, sendNextFrame]);
 
-  // Start capturing and sending frames
+  // Start capturing
   const startCapture = useCallback(() => {
-    if (captureIntervalRef.current) return;
-
-    captureIntervalRef.current = setInterval(() => {
-      if (camera.isActive && ws.status === 'connected') {
-        const frame = camera.captureFrame(0.7); // 70% quality JPEG
-        if (frame) {
-          ws.sendFrame(frame);
-        }
-      }
-    }, CAPTURE_INTERVAL);
-  }, [camera, ws]);
+    isCapturingRef.current = true;
+    waitingForResponseRef.current = false;
+    sendNextFrame(); // Lance la boucle
+  }, [sendNextFrame]);
 
   // Stop capturing
   const stopCapture = useCallback(() => {
-    if (captureIntervalRef.current) {
-      clearInterval(captureIntervalRef.current);
-      captureIntervalRef.current = null;
-    }
+    isCapturingRef.current = false;
+    waitingForResponseRef.current = false;
     setProcessedFrame(null);
   }, []);
 
@@ -68,7 +76,7 @@ function App() {
     ws.setMode(mode);
     
     // If selecting a mode and not yet capturing, start
-    if (mode && !captureIntervalRef.current && camera.isActive) {
+    if (mode && !isCapturingRef.current && camera.isActive) {
       startCapture();
     }
     
@@ -138,29 +146,39 @@ function App() {
         facingMode={camera.facingMode}
       />
 
-      <main className="flex-1 flex flex-col min-h-0 p-3 gap-3">
-        <VideoCanvas
-          ref={camera.videoRef}
-          processedFrame={processedFrame}
-          isActive={camera.isActive}
-          hasMultipleCameras={camera.hasMultipleCameras}
-          onToggleFacing={camera.toggleFacing}
-          error={camera.error}
-        />
+      {/* Main content area - responsive layout */}
+      <main className="flex-1 flex flex-col md:flex-row min-h-0 p-3 gap-3">
+        
+        {/* Sidebar - Controls (left on desktop, bottom on mobile) */}
+        <aside className="order-2 md:order-1 md:w-48 lg:w-56 flex flex-col gap-3 shrink-0">
+          <CapsuleGrid
+            currentMode={ws.currentMode}
+            isConnected={ws.status === 'connected'}
+            onSelectMode={handleSelectMode}
+            layout="responsive"
+          />
+          
+          <ControlBar
+            cameraActive={camera.isActive}
+            wsConnected={ws.status === 'connected'}
+            onStart={handleStart}
+            onStop={handleStop}
+            layout="responsive"
+          />
+        </aside>
 
-        <CapsuleGrid
-          currentMode={ws.currentMode}
-          isConnected={ws.status === 'connected'}
-          onSelectMode={handleSelectMode}
-        />
+        {/* Video area (right on desktop, top on mobile) */}
+        <div className="order-1 md:order-2 flex-1 min-h-0">
+          <VideoCanvas
+            ref={camera.videoRef}
+            processedFrame={processedFrame}
+            isActive={camera.isActive}
+            hasMultipleCameras={camera.hasMultipleCameras}
+            onToggleFacing={camera.toggleFacing}
+            error={camera.error}
+          />
+        </div>
       </main>
-
-      <ControlBar
-        cameraActive={camera.isActive}
-        wsConnected={ws.status === 'connected'}
-        onStart={handleStart}
-        onStop={handleStop}
-      />
 
       <Footer />
     </div>

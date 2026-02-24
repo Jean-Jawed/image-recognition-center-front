@@ -1,7 +1,6 @@
 /**
- * Capsules Configuration
- * Add new capsules here — they'll automatically appear in the UI
- * Each capsule corresponds to a processor in the backend
+ * Capsules Configuration (Lite Version)
+ * MediaPipe processors only — optimized for free-tier hosting
  */
 
 export const CAPSULES = [
@@ -22,18 +21,6 @@ export const CAPSULES = [
     label: "Face Mesh",
     description: "468 facial points",
     shortcut: "3",
-  },
-  {
-    id: "emotion_detection",
-    label: "Emotion",
-    description: "7 emotions analysis",
-    shortcut: "4",
-  },
-  {
-    id: "object_detection",
-    label: "Objects",
-    description: "80 class detection",
-    shortcut: "5",
   },
 ];
 
